@@ -1,33 +1,50 @@
-#include <Arduino.h>
-#include <Wire.h>
-#include <Q2HX711.h>
+/*
+  Read the 18 channels of spectral light over I2C using the Spectral Triad
+  By: Nathan Seidle
+  SparkFun Electronics
+  Date: October 25th, 2018
+  License: MIT. See license file for more information but you can
+  basically do whatever you want with this code.
+
+  This example shows how to output the raw sensor values. This is probably never needed since the 
+  calibrated values are tuned to each sensor. But it does run faster (2 bytes per channel instead of 4)
+  
+  Feel like supporting open source hardware?
+  Buy a board from SparkFun! https://www.sparkfun.com/products/15050
+
+  Hardware Connections:
+  Plug a Qwiic cable into the Spectral Triad and a BlackBoard
+  If you don't have a platform with a Qwiic connection use the SparkFun Qwiic Breadboard Jumper (https://www.sparkfun.com/products/14425)
+  Open the serial monitor at 115200 baud to see the output
+*/
+
 #include "SparkFun_AS7265X.h" //Click here to get the library: http://librarymanager/All#SparkFun_AS7265X
-
-
-const byte hx711_data_pin = 26;
-const byte hx711_clock_pin = 21;
-
-Q2HX711 hx711(hx711_data_pin, hx711_clock_pin);
 AS7265X sensor;
 
+#include <Wire.h>
 
-void setup(void) {
+void setup()
+{
   Serial.begin(115200);
-  Wire.begin();
+  Serial.println("AS7265x Spectral Triad Example");
+
   if (sensor.begin() == false)
   {
     Serial.println("Sensor does not appear to be connected. Please check wiring. Freezing...");
-  
+    while (1)
+      ;
   }
 
+  //Once the sensor is started we can increase the I2C speed
+  Wire.setClock(400000);
+
+  sensor.disableIndicator();
+
   Serial.println("A,B,C,D,E,F,G,H,R,I,S,J,T,U,V,W,K,L");
-
-
 }
 
-void loop(void) {
-  Serial.println(hx711.read()/100.0);
-  delay(500);
+void loop()
+{
   sensor.takeMeasurements(); //This is a hard wait while all 18 channels are measured
 
   Serial.print(sensor.getA()); //410nm
