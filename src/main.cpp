@@ -2,10 +2,7 @@
 #include <Wire.h>
 #include <Q2HX711.h>
 #include "SparkFun_AS7265X.h" //Click here to get the library: http://librarymanager/All#SparkFun_AS7265X
-
-
-const byte hx711_data_pin = 26;
-const byte hx711_clock_pin = 21;
+#include "ESP32Servo.h"
 
 #define PIN_BOMBA1    GPIO_NUM_5
 #define PIN_BOMBA2    GPIO_NUM_4
@@ -13,19 +10,107 @@ const byte hx711_clock_pin = 21;
 #define PIN_BOMBA4    GPIO_NUM_2
 #define PIN_VALVULA   GPIO_NUM_1
 #define PIN_LED1      GPIO_NUM_7
+#define PIN_LED2      GPIO_NUM_6
+#define PIN_LED3      GPIO_NUM_38
+#define PIN_SERVO     GPIO_NUM_40
+
+const byte hx711_data_pin = 26;
+const byte hx711_clock_pin = 21;
+String command = "";
 
 Q2HX711 hx711(hx711_data_pin, hx711_clock_pin);
 AS7265X sensor;
+Servo myServo;
+
+
+
+
+
+void Wave_Lenght_Sensor(void) {
+  sensor.takeMeasurements(); //This is a hard wait while all 18 channels are measured
+
+  Serial.print(sensor.getA()); //410nm
+  Serial.print(",");
+  Serial.print(sensor.getB()); //435nm
+  Serial.print(",");
+  Serial.print(sensor.getC()); //460nm
+  Serial.print(",");
+  Serial.print(sensor.getD()); //485nm
+  Serial.print(",");
+  Serial.print(sensor.getE()); //510nm
+  Serial.print(",");
+  Serial.print(sensor.getF()); //535nm
+  Serial.print(",");
+
+  Serial.print(sensor.getG()); //560nm
+  Serial.print(",");
+  Serial.print(sensor.getH()); //585nm
+  Serial.print(",");
+  Serial.print(sensor.getR()); //610nm
+  Serial.print(",");
+  Serial.print(sensor.getI()); //645nm
+  Serial.print(",");
+  Serial.print(sensor.getS()); //680nm
+  Serial.print(",");
+  Serial.print(sensor.getJ()); //705nm
+  Serial.print(",");
+
+  Serial.print(sensor.getT()); //730nm
+  Serial.print(",");
+  Serial.print(sensor.getU()); //760nm
+  Serial.print(",");
+  Serial.print(sensor.getV()); //810nm
+  Serial.print(",");
+  Serial.print(sensor.getW()); //860nm
+  Serial.print(",");
+  Serial.print(sensor.getK()); //900nm
+  Serial.print(",");
+  Serial.print(sensor.getL()); //940nm
+  Serial.print(",");
+
+  Serial.println();
+}
+
+void Leer_Led_1(void) {
+  digitalWrite(PIN_LED1, HIGH);
+  delay(2000);
+  Wave_Lenght_Sensor();
+  digitalWrite(PIN_LED1, LOW);
+}
+
+void Leer_Led_2(void) {
+  digitalWrite(PIN_LED2, HIGH);
+  delay(2000);
+  Wave_Lenght_Sensor();
+  digitalWrite(PIN_LED2, LOW);
+}
+
+void Leer_Led_3(void) {
+  digitalWrite(PIN_LED3, HIGH);
+  delay(2000);
+  Wave_Lenght_Sensor();
+  digitalWrite(PIN_LED3, LOW);
+}
+
+void Leer_Presion(void) {
+  Serial.println(hx711.read()/100.0);
+  delay(500);
+}
+
+
 
 
 void setup(void) {
   Serial.begin(115200);
-  Wire.begin();
+
+  Wire.begin(42,41);
   if (sensor.begin() == false)
   {
     Serial.println("Sensor does not appear to be connected. Please check wiring. Freezing...");
+    
   
   }
+  sensor.disableIndicator();
 
   Serial.println("A,B,C,D,E,F,G,H,R,I,S,J,T,U,V,W,K,L");
 
@@ -37,54 +122,48 @@ void setup(void) {
   pinMode(PIN_VALVULA, OUTPUT);
 
   pinMode(PIN_LED1, OUTPUT);
+  pinMode(PIN_LED2, OUTPUT);
+  pinMode(PIN_LED3, OUTPUT);
+  myServo.attach(PIN_SERVO);
 
+  Serial.println("Write the command to any action");
 
 }
 
 void loop(void) {
+  if(Serial.available()) {
+    command = Serial.readStringUntil('\n');
+    command.trim();
+    if(command.equalsIgnoreCase("Leer")) Wave_Lenght_Sensor();
+    else if(command.equalsIgnoreCase("LedA")) {
+      digitalWrite(PIN_LED1, HIGH);
+      delay(1000);
+      digitalWrite(PIN_LED1, LOW);
+    }
+    else if(command.equalsIgnoreCase("LedR")) {
+      digitalWrite(PIN_LED2, HIGH);
+      delay(1000);
+      digitalWrite(PIN_LED2, LOW);
+    }
+    else if(command.equalsIgnoreCase("LedIR")) {
+      digitalWrite(PIN_LED3, HIGH);
+      delay(1000);
+      digitalWrite(PIN_LED3, LOW);
+    }
+    else if(command.equalsIgnoreCase("LeerT")) {
+      Leer_Led_1();
+      Leer_Led_2();
+      Leer_Led_3();      
+    }
+    else if(command.equalsIgnoreCase("Presion")) {
+      Leer_Presion();
+    }
+    else if(command.equalsIgnoreCase("0")) {
+      myServo.write(170);
+    }
+    else if(command.equalsIgnoreCase("1")) {
+      myServo.write(45);
+    }
 
-  
-
-  // sensor.takeMeasurements(); //This is a hard wait while all 18 channels are measured
-
-  // Serial.print(sensor.getA()); //410nm
-  // Serial.print(",");
-  // Serial.print(sensor.getB()); //435nm
-  // Serial.print(",");
-  // Serial.print(sensor.getC()); //460nm
-  // Serial.print(",");
-  // Serial.print(sensor.getD()); //485nm
-  // Serial.print(",");
-  // Serial.print(sensor.getE()); //510nm
-  // Serial.print(",");
-  // Serial.print(sensor.getF()); //535nm
-  // Serial.print(",");
-
-  // Serial.print(sensor.getG()); //560nm
-  // Serial.print(",");
-  // Serial.print(sensor.getH()); //585nm
-  // Serial.print(",");
-  // Serial.print(sensor.getR()); //610nm
-  // Serial.print(",");
-  // Serial.print(sensor.getI()); //645nm
-  // Serial.print(",");
-  // Serial.print(sensor.getS()); //680nm
-  // Serial.print(",");
-  // Serial.print(sensor.getJ()); //705nm
-  // Serial.print(",");
-
-  // Serial.print(sensor.getT()); //730nm
-  // Serial.print(",");
-  // Serial.print(sensor.getU()); //760nm
-  // Serial.print(",");
-  // Serial.print(sensor.getV()); //810nm
-  // Serial.print(",");
-  // Serial.print(sensor.getW()); //860nm
-  // Serial.print(",");
-  // Serial.print(sensor.getK()); //900nm
-  // Serial.print(",");
-  // Serial.print(sensor.getL()); //940nm
-  // Serial.print(",");
-
-  // Serial.println();
+  }
 }
