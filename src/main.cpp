@@ -18,6 +18,9 @@ const byte hx711_data_pin = 26;
 const byte hx711_clock_pin = 21;
 String command = "";
 
+float p0 = 0.0;
+float p1 = 0.0;
+
 Q2HX711 hx711(hx711_data_pin, hx711_clock_pin);
 AS7265X sensor;
 Servo myServo;
@@ -97,18 +100,21 @@ void Leer_Presion(void) {
   delay(500);
 }
 
+float Presion(void) {
+  float presion = hx711.read() / 1000;
+  Serial.println(presion);
+  return presion;
 
+  delay(100);
+}
 
 
 void setup(void) {
   Serial.begin(115200);
-
   Wire.begin(42,41);
   if (sensor.begin() == false)
   {
     Serial.println("Sensor does not appear to be connected. Please check wiring. Freezing...");
-    
-  
   }
   sensor.disableIndicator();
 
@@ -128,7 +134,59 @@ void setup(void) {
 
   Serial.println("Write the command to any action");
 
+
 }
+
+void Llenar_Agua(void) {
+  float p0 = Presion();
+  Serial.println("La presion inicial es: " + String(p0));
+  delay(1000);
+  while((Presion() - p0) <= 284) {
+    digitalWrite(PIN_BOMBA1, HIGH);
+    delay(10);
+  }
+  digitalWrite(PIN_BOMBA1, LOW);
+  delay(100);
+}
+
+void Vaciar_Agua(void) {
+  float p0 = Presion();
+  Serial.println("La presion inicial es: " + String(p0));
+  while((p0 - Presion()) < 276 ) {
+    digitalWrite(PIN_BOMBA2, HIGH);
+    delay(10);
+  }
+  delay(5000);
+  digitalWrite(PIN_BOMBA2, LOW);
+  delay(100);
+}
+
+void Llenar_Alcohol(void) {
+  float p0 = Presion();
+  Serial.println("La presion inicial es: " + String(p0));
+  delay(1000);
+  while((Presion() - p0) <= 102 ) {
+    digitalWrite(PIN_BOMBA3, HIGH);
+    delay(10);
+  }
+  digitalWrite(PIN_BOMBA3, LOW);
+  delay(100);
+}
+
+void Vaciar_Alcohol(void) {
+  digitalWrite(PIN_BOMBA2, HIGH);
+  delay(7000);
+  digitalWrite(PIN_BOMBA2, LOW);
+}
+
+void Aire(void) {
+  Serial.println("Echando aire");
+  digitalWrite(PIN_BOMBA4, HIGH);
+  delay(3000);
+  digitalWrite(PIN_BOMBA4, LOW);
+}
+
+
 
 void loop(void) {
   if(Serial.available()) {
@@ -164,6 +222,30 @@ void loop(void) {
     else if(command.equalsIgnoreCase("1")) {
       myServo.write(45);
     }
-
+    else if(command.equalsIgnoreCase("Bomba1")) {
+      digitalWrite(PIN_BOMBA1, HIGH);
+      Serial.println("Llenando");
+      delay(2000);
+      digitalWrite(PIN_BOMBA1, LOW);
+    }
+    else if(command.equalsIgnoreCase("Vaciar")) {
+      digitalWrite(PIN_BOMBA2, HIGH);
+      Serial.println("Vaciado");
+      delay(2000);
+      digitalWrite(PIN_BOMBA2, LOW);
+    }
+    else if(command.equalsIgnoreCase("LlenarA")){
+      Llenar_Agua();
+    }
+    else if(command.equalsIgnoreCase("VaciarA")) {
+      Vaciar_Agua();
+    }
+    else if(command.equalsIgnoreCase("LlenarAl"))
+    Llenar_Alcohol();
+    else if(command.equalsIgnoreCase("VaciarAl"))
+    Vaciar_Alcohol();
+    else if(command.equalsIgnoreCase("Aire")) 
+    Aire();
   }
+
 }
